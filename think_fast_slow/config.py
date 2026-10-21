@@ -1,11 +1,15 @@
 import os
 from pathlib import Path
 from dataclasses import dataclass, field
-from dotenv import load_dotenv
-
-# Load .env from project root or parent directory
-BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+try:
+    from dotenv import load_dotenv
+    # Load .env from project root if it exists
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    env_path = BASE_DIR / ".env"
+    if env_path.exists():
+        load_dotenv(env_path)
+except ImportError:
+    pass
 
 @dataclass
 class DualProcessConfig:
