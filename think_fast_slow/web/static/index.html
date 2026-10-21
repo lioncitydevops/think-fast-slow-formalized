@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thinking, Fast and Slow, Formalized | Jev & Qwen3-8B Controller</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header>
+      <div class="brand-wrapper">
+        <div class="logo-icon">Ψ</div>
+        <div class="brand-title">
+          <h1>Thinking, Fast and Slow, Formalized</h1>
+          <p>Dual-Process Decision Model Pairing TypeSafe Jev (System 1) & Qwen3-8B (System 2) · NUS (2026)</p>
+        </div>
+      </div>
+      <div class="system-status-pills">
+        <div class="status-pill" id="s1Status">
+          <span class="status-dot" id="s1Dot"></span>
+          <span id="s1Text">Jev: Connecting...</span>
+        </div>
+        <div class="status-pill" id="s2Status">
+          <span class="status-dot secondary" id="s2Dot"></span>
+          <span id="s2Text">Qwen3-8B: Connecting...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="playgroundTab">⚡ Cognitive Controller</button>
+      <button class="tab-btn" data-tab="domainsTab">🏢 Table 8 Domains (7 Profiles)</button>
+      <button class="tab-btn" data-tab="proofsTab">📐 Table 11 Proofs & Hypotheses</button>
+      <button class="tab-btn" data-tab="replicationsTab">📊 Paper Replications (Tables 6 & 9)</button>
+    </nav>
+
+    <!-- Tab 1: Playground -->
+    <section id="playgroundTab" class="tab-pane active">
+      <div class="playground-grid">
+        <!-- Left: Query & Controller Controls -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h2>Query State & Parameters</h2>
+          </div>
+
+          <div class="form-group">
+            <label for="taskDomain">Application Domain (Table 8)</label>
+            <select id="taskDomain">
+              <option value="crm">Customer Service / CRM</option>
+              <option value="swe" selected>Software Engineering</option>
+              <option value="requirements">Requirements Engineering</option>
+              <option value="logistics">Logistics / Port Operations</option>
+              <option value="egov">E-Government Services</option>
+              <option value="agentic">Agentic Software</option>
+              <option value="consumer">Consumer Behaviour / E-Commerce</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="queryText">Text State (x)</label>
+            <textarea id="queryText" rows="3">Diff: modified auth token validation to bypass signature check in dev mode if env DEBUG=1.</textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="queryQuestion">Typed Question Instruction</label>
+            <input type="text" id="queryQuestion" class="form-control" value="Does this pull request introduce a critical security regression?">
+          </div>
+
+          <div class="form-group">
+            <label for="queryOptions">Candidate Choices (A)</label>
+            <input type="text" id="queryOptions" class="form-control" value="security_risk, safe_to_merge">
+          </div>
+
+          <div class="form-group">
+            <label>Interaction Pattern (Section 6)</label>
+            <div class="pattern-selector-grid">
+              <div class="pattern-chip" data-pattern="P1">P1 Cascade</div>
+              <div class="pattern-chip" data-pattern="P2">P2 Budget</div>
+              <div class="pattern-chip active" data-pattern="P3">P3 Probe</div>
+              <div class="pattern-chip" data-pattern="P4">P4 Verifier</div>
+              <div class="pattern-chip" data-pattern="P5">P5 Reconcile</div>
+            </div>
+            <p id="patternHelp" style="font-size: 11px; color: var(--accent-cyan); margin-top: 6px;">
+              P3 Disagreement Probe: Parallel-competitive. Runs fast probe a0; deliberates only on conflict.
+            </p>
+          </div>
+
+          <div class="form-group" style="display: flex; gap: 16px;">
+            <div style="flex: 1;">
+              <label for="tauThreshold">Certified Act Threshold (τ)</label>
+              <input type="number" id="tauThreshold" class="form-control" value="0.88" step="0.01" min="0.50" max="0.99">
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 24px;">
+              <input type="checkbox" id="useMockToggle" style="width: 18px; height: 18px; cursor: pointer;">
+              <label for="useMockToggle" style="margin: 0; cursor: pointer; font-size: 13px;">Use Mock</label>
+            </div>
+          </div>
+
+          <button id="runQueryBtn" class="btn-primary">
+            ⚡ Execute Dual-Process Decision
+          </button>
+        </div>
+
+        <!-- Right: Real-Time Cognitive Pipeline Visualizer -->
+        <div class="pipeline-view">
+          <!-- Final Decision Summary Card -->
+          <div class="glass-card" style="border-color: var(--border-glow); background: rgba(14, 23, 47, 0.9);">
+            <div class="stage-result-header">
+              <div>
+                <span style="font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono);">Released Decision</span>
+                <div class="decision-pill" id="finalReleasedAction">Ready for Query</div>
+              </div>
+              <div id="decisionBandBadge" class="band-indicator band-act">IDLE</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; border-top: 1px solid var(--border-subtle); padding-top: 12px;">
+              <div>
+                <span style="font-size: 11px; color: var(--text-dim);">Execution Mode</span>
+                <div id="execMode" style="font-family: var(--font-mono); font-size: 13px; color: var(--accent-cyan);">-</div>
+              </div>
+              <div>
+                <span style="font-size: 11px; color: var(--text-dim);">Thinking Tokens</span>
+                <div id="tokensSpent" style="font-family: var(--font-mono); font-size: 13px; color: var(--accent-indigo);">-</div>
+              </div>
+              <div>
+                <span style="font-size: 11px; color: var(--text-dim);">Total Latency</span>
+                <div id="totalLatency" style="font-family: var(--font-mono); font-size: 13px; color: var(--accent-emerald);">-</div>
+              </div>
+              <div>
+                <span style="font-size: 11px; color: var(--text-dim);">Conformal Set</span>
+                <div id="conformalSet" style="font-family: var(--font-mono); font-size: 13px; color: var(--accent-purple);">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stage 1 Card: Jev Heuristic Response -->
+          <div class="stage-card">
+            <div class="stage-meta">
+              <span class="stage-badge">Stage 1 · Fast Heuristic (Jev)</span>
+              <span style="font-size: 12px; color: var(--text-muted);" id="s1Latency">0.00s</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px;">
+              <div style="font-size: 17px; font-weight: 700; color: #fff;">
+                Intuitive Answer: <span id="s1Choice" style="color: var(--accent-cyan);">-</span>
+              </div>
+              <div style="font-family: var(--font-mono); font-size: 14px; color: var(--text-muted);">
+                Calibrated Confidence: <b id="s1Conf" style="color: var(--accent-emerald);">-</b>
+              </div>
+            </div>
+            <div class="prob-dist-container" id="s1ProbList">
+              <span style="font-size: 12px; color: var(--text-dim);">Awaiting execution to display probability vector p...</span>
+            </div>
+          </div>
+
+          <!-- Stage 2 / Stage 3 Card: Deliberation or Fallback -->
+          <div class="stage-card stage3">
+            <div class="stage-meta">
+              <span class="stage-badge" style="background: rgba(192, 132, 252, 0.15); color: var(--accent-purple);">
+                Stage 3 · Effortful Reasoning (Qwen3-8B)
+              </span>
+              <span style="font-size: 12px; color: var(--text-muted);" id="delibActionTitle">Deliberation Trace</span>
+            </div>
+            <div style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 10px;">
+              Deliberated Result: <span id="s2Choice" style="color: var(--accent-purple);">-</span>
+            </div>
+            <div class="thinking-trace-box" id="s2Trace">[Reasoning trace and thinking tokens will stream here]</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Domain Applications -->
+    <section id="domainsTab" class="tab-pane">
+      <div class="glass-card" style="margin-bottom: 24px;">
+        <h2 style="font-family: var(--font-heading); margin-bottom: 8px;">Table 8 Applications in Service & Software Systems (7 Domains)</h2>
+        <p style="color: var(--text-muted); font-size: 14px;">
+          The formal dual-process controller fits services where many decisions are cheap to make, a minority deserve deliberation, and mistakes have asymmetric costs. Click any domain card below to load a scenario directly into the Cognitive Controller.
+        </p>
+      </div>
+      <div class="domains-grid" id="domainsGrid">
+        <!-- Populated via app.js -->
+      </div>
+    </section>
+
+    <!-- Tab 3: Proofs & Hypotheses -->
+    <section id="proofsTab" class="tab-pane">
+      <div class="glass-card" style="margin-bottom: 24px;">
+        <div class="card-header">
+          <h2>Machine Precision Mathematical Proofs (Section 5 & 8)</h2>
+          <button id="runEvalBtn" class="btn-primary" style="width: auto; padding: 10px 18px;">
+            Run Full Evaluation Suite
+          </button>
+        </div>
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+          The identities of Proposition 5.1 and Proposition 5.4 are verified against mock systems with known properties to machine precision (&lt; 10⁻¹²), guaranteeing that the code computes what the paper defines.
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <div class="stage-card">
+            <h3 style="font-size: 15px; color: #fff; margin-bottom: 8px;">Proposition 5.1 Escalation Identity</h3>
+            <p style="font-family: var(--font-mono); font-size: 13px; color: var(--accent-cyan); margin-bottom: 10px;">G(Z) = M_Z * (W₂ - W₁)</p>
+            <div style="font-size: 13px; color: var(--text-muted);">Machine Precision Difference: <b id="escIdentityDiff" style="color: var(--accent-emerald);">0.0</b></div>
+            <div style="font-size: 13px; color: var(--text-muted);">Disagreement Mass M_Z (label-free): <b id="escMZ" style="color: #fff;">-</b></div>
+            <div style="font-size: 13px; color: var(--text-muted);">Win Margin W₂ - W₁: <b id="escWinMargin" style="color: #fff;">-</b></div>
+          </div>
+          <div class="stage-card stage2">
+            <h3 style="font-size: 15px; color: #fff; margin-bottom: 8px;">Proposition 5.4 Paired Decomposition</h3>
+            <p style="font-family: var(--font-mono); font-size: 13px; color: var(--accent-indigo); margin-bottom: 10px;">G_inf - G_blind = Σ P(T)·[P(i=y|T) - P(b=y|T)]</p>
+            <div style="font-size: 13px; color: var(--text-muted);">Machine Precision Difference: <b id="decompDiff" style="color: var(--accent-emerald);">0.0</b></div>
+            <div style="font-size: 13px; color: var(--text-muted);">Stable Term Identically Zero: <b id="decompStableZero" style="color: var(--accent-emerald);">True</b></div>
+            <div style="font-size: 13px; color: var(--text-muted);">Anchor Transition Share: <b id="decompAnchorShare" style="color: #fff;">-</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h2 style="margin-bottom: 16px;">Table 11 Pre-Registered Hypotheses & Falsification Criteria</h2>
+        <div id="hypothesesList">
+          <span style="font-size: 13px; color: var(--text-muted);">Click "Run Full Evaluation Suite" above to verify all 9 pre-registered hypotheses against benchmark datasets.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 4: Paper Replications -->
+    <section id="replicationsTab" class="tab-pane">
+      <div class="glass-card" style="margin-bottom: 24px;">
+        <h2 style="margin-bottom: 12px;">Table 6: Optimal Budgets Under Five Return Curves</h2>
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px;">
+          Numerical evaluation of Proposition 5.6 & 5.7 across reported return curves (r=0.1, γ=2, λβ=0.01, β=1024, ε=0.35). Band edges are nearly invariant; magnitudes and minimum effective budget move tenfold.
+        </p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Return Curve h(B)</th>
+              <th>Act (c ≥)</th>
+              <th>Give Up (c ≤)</th>
+              <th>Peak B* (tokens)</th>
+              <th>Min B* > 0</th>
+              <th>Kept Value %</th>
+            </tr>
+          </thead>
+          <tbody id="table3Body"></tbody>
+        </table>
+      </div>
+
+      <div class="glass-card">
+        <h2 style="margin-bottom: 12px;">Table 9: Worked Example Under Three Prices of Thought</h2>
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px;">
+          Binary triage service with c = 0.5 + 0.5·U, U ~ Beta(3, 1). Budgeted controller achieves 0.915 accuracy at ~1,000 tokens/query — higher accuracy than thinking on everything at a quarter of the tokens.
+        </p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Policy</th>
+              <th>Act Share</th>
+              <th>Deliberate Share</th>
+              <th>Give Up Share</th>
+              <th>Mean Tokens</th>
+              <th>Accuracy</th>
+            </tr>
+          </thead>
+          <tbody id="table5Body"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

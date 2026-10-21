@@ -1,0 +1,318 @@
+{
+  "system1_live": {
+    "status": "PASS",
+    "action": "Yes",
+    "confidence": 1.0,
+    "latency": 0.7034991000000446,
+    "probabilities": {
+      "Yes": 1.0,
+      "No": 0.0
+    }
+  },
+  "system2_live": {
+    "status": "PASS",
+    "probe_action": "Yes",
+    "probe_tokens": 24,
+    "probe_latency": 8.719391599999653,
+    "delib_action": "No",
+    "delib_tokens": 466,
+    "delib_latency": 7.3969200000001365
+  },
+  "patterns": {
+    "P1_Cascade": {
+      "action": "Yes",
+      "band": "ACT",
+      "mode": "ACT",
+      "tokens": 0,
+      "latency": 0.2575858000000153
+    },
+    "P2_Budgeted": {
+      "action": "Yes",
+      "band": "ACT",
+      "mode": "ACT",
+      "tokens": 0,
+      "latency": 0.2046440000003713
+    },
+    "P3_Probe": {
+      "action": "Yes",
+      "band": "ACT",
+      "mode": "PROBE_ACT",
+      "tokens": 24,
+      "latency": 7.635089999999764
+    },
+    "P4_Verifier": {
+      "action": "Yes",
+      "band": "ACT",
+      "mode": "ACT",
+      "tokens": 0,
+      "latency": 0.2833967999995366
+    },
+    "P5_Reconcile": {
+      "action": "Yes",
+      "band": "ACT",
+      "mode": "ACT",
+      "tokens": 0,
+      "latency": 0.26689639999949577
+    }
+  },
+  "fallbacks": {
+    "bayes_action": "hold",
+    "conformal_q_hat": 0.4,
+    "conformal_predicted_set": [
+      "A"
+    ]
+  },
+  "mathematical_identities": {
+    "prop_5_1_diff": 0.0,
+    "prop_5_1_holds": true,
+    "prop_5_1_M_Z": 0.32142857142857145,
+    "prop_5_1_win_margin": -0.40740740740740744,
+    "prop_5_4_diff": 0.0,
+    "prop_5_4_holds": true,
+    "prop_5_4_stable_zero": true,
+    "transition_shares": {
+      "stable": 0.813953488372093,
+      "anchor": 0.18604651162790697,
+      "reactance": 0.0,
+      "drift": 0.0
+    }
+  },
+  "table_6": [
+    {
+      "curve": "saturating",
+      "act_c": 0.9,
+      "give_up_c": 0.57,
+      "peak_B": 2760,
+      "min_B_pos": 57,
+      "kept": 1.0
+    },
+    {
+      "curve": "log-linear",
+      "act_c": 0.9,
+      "give_up_c": 0.59,
+      "peak_B": 2620,
+      "min_B_pos": 10,
+      "kept": 0.97
+    },
+    {
+      "curve": "early-flat",
+      "act_c": 0.91,
+      "give_up_c": 0.58,
+      "peak_B": 550,
+      "min_B_pos": 8,
+      "kept": 0.71
+    },
+    {
+      "curve": "threshold",
+      "act_c": 0.85,
+      "give_up_c": 0.57,
+      "peak_B": 5520,
+      "min_B_pos": 3740,
+      "kept": 0.45
+    },
+    {
+      "curve": "inverted-U",
+      "act_c": 0.9,
+      "give_up_c": 0.56,
+      "peak_B": 2070,
+      "min_B_pos": 10,
+      "kept": 0.97
+    }
+  ],
+  "table_9": [
+    {
+      "policy": "System 1 only",
+      "act_share": "100.0%",
+      "deliberate_share": "-",
+      "give_up_share": "-",
+      "tokens": 0,
+      "accuracy": 0.877,
+      "raw": {
+        "act_pct": 100.0,
+        "delib_pct": 0.0,
+        "giveup_pct": 0.0,
+        "tokens": 0.0,
+        "accuracy": 0.877
+      }
+    },
+    {
+      "policy": "Think on all, B=4096",
+      "act_share": "-",
+      "deliberate_share": "100.0%",
+      "give_up_share": "-",
+      "tokens": 4096,
+      "accuracy": 0.893,
+      "raw": {
+        "act_pct": 0.0,
+        "delib_pct": 100.0,
+        "giveup_pct": 0.0,
+        "tokens": 4096.0,
+        "accuracy": 0.8932
+      }
+    },
+    {
+      "policy": "Budgeted, lambda*beta=0.003",
+      "act_share": "47.2%",
+      "deliberate_share": "52.8%",
+      "give_up_share": "-",
+      "tokens": 1640,
+      "accuracy": 0.907,
+      "raw": {
+        "act_pct": 47.199999999999996,
+        "delib_pct": 52.800000000000004,
+        "giveup_pct": 0.0,
+        "tokens": 1640.2236,
+        "accuracy": 0.9066
+      }
+    },
+    {
+      "policy": "Budgeted, lambda*beta=0.01",
+      "act_share": "50.2%",
+      "deliberate_share": "49.8%",
+      "give_up_share": "-",
+      "tokens": 1005,
+      "accuracy": 0.912,
+      "raw": {
+        "act_pct": 50.160000000000004,
+        "delib_pct": 49.84,
+        "giveup_pct": 0.0,
+        "tokens": 1004.539,
+        "accuracy": 0.912
+      }
+    },
+    {
+      "policy": "Budgeted, lambda*beta=0.03",
+      "act_share": "56.9%",
+      "deliberate_share": "43.1%",
+      "give_up_share": "-",
+      "tokens": 474,
+      "accuracy": 0.915,
+      "raw": {
+        "act_pct": 56.940000000000005,
+        "delib_pct": 43.059999999999995,
+        "giveup_pct": 0.0,
+        "tokens": 474.011,
+        "accuracy": 0.9148
+      }
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H1",
+      "description": "T1 (BoolQ): act-band error <= epsilon at certified tau",
+      "falsification_criteria": "Error CI above epsilon",
+      "metric_value": "Clopper-Pearson Upper = 0.111 (target <= 0.25)",
+      "falsified": false,
+      "status": "SUPPORTED"
+    },
+    {
+      "id": "H1'",
+      "description": "T2 (GSM8K): Jev overconfident: on c >= 0.9, error exceeds the mean of 1 - c",
+      "falsification_criteria": "Error CI at or below the mean of 1 - c",
+      "metric_value": "Observed error = 0.380 (CI lower = 0.260) vs mean(1 - c) = 0.080",
+      "falsified": false,
+      "status": "SUPPORTED (Overconfidence confirmed)"
+    },
+    {
+      "id": "H2",
+      "description": "W2 > W1 in middle band only; W2 <= W1 in top band (overthinking on confident items)",
+      "falsification_criteria": "Top-band W2 - W1 CI above 0",
+      "metric_value": "Middle win margin = +0.63, Top win margin = -0.16",
+      "falsified": false,
+      "status": "SUPPORTED"
+    },
+    {
+      "id": "H3",
+      "description": "Anchor > Reactance; G_inf < G_blind; Reconcile anchor < Informed anchor",
+      "falsification_criteria": "Any inequality reversed with CI excluding 0",
+      "metric_value": "Anchor=0.19 > Reactance=0.00; G_inf=0.07 < G_blind=0.15; Reconcile_Anchor=0.16",
+      "falsified": false,
+      "status": "SUPPORTED"
+    },
+    {
+      "id": "H4",
+      "description": "Nonparametric B* is 0 in top band, positive in middle; curves differ by task",
+      "falsification_criteria": "B* > 0 in top band, or no task difference",
+      "metric_value": "Top band B* = 0, Middle band B* = 2048, Task differences = True",
+      "falsified": false,
+      "status": "SUPPORTED"
+    },
+    {
+      "id": "H5",
+      "description": "Probe disagreement predicts thinking-mode disagreement (AUROC > 0.7)",
+      "falsification_criteria": "AUROC <= 0.7",
+      "metric_value": "AUROC = 0.820",
+      "falsified": false,
+      "status": "SUPPORTED"
+    },
+    {
+      "id": "H6",
+      "description": "Verifier cuts harmful overrides >= 30%, keeps >= 80% of beneficial ones",
+      "falsification_criteria": "Either missed",
+      "metric_value": "Harmful cut = 40.0% (target >= 30%), Beneficial kept = 86.0% (target >= 80%)",
+      "falsified": false,
+      "status": "SUPPORTED"
+    },
+    {
+      "id": "H7",
+      "description": "Conformal coverage >= 1 - alpha - 0.02; Bayes action beats always-act",
+      "falsification_criteria": "Either missed",
+      "metric_value": "Coverage = 100.0% (target >= 0.93); Bayes Loss = 0.16 < Always-Act = 0.38",
+      "falsified": false,
+      "status": "SUPPORTED"
+    },
+    {
+      "id": "H8",
+      "description": "T3 (CRT lures): Jev confidently wrong; probe catches more lure errors than any confidence threshold",
+      "falsification_criteria": "Threshold catches as many",
+      "metric_value": "Probe caught = 15 lure errors vs Threshold caught = 3",
+      "falsified": false,
+      "status": "SUPPORTED"
+    },
+    {
+      "id": "H9",
+      "description": "Majority voting gains confined to items with p_hat_i > 1/2; losses where p_hat_i < 1/2 (p_hat_i from independent runs)",
+      "falsification_criteria": "Gains where p_hat_i < 1/2",
+      "metric_value": "Gain on noisy items (p_hat_i > 0.5) = +0.28; Gain on biased items (p_hat_i < 0.5) = -0.05",
+      "falsified": false,
+      "status": "SUPPORTED"
+    }
+  ],
+  "domains": {
+    "crm": {
+      "name": "Customer Service / CRM",
+      "fallback": "priority_queue_hold",
+      "risk": "Anchoring on System-1 category"
+    },
+    "swe": {
+      "name": "Software Engineering",
+      "fallback": "block_merge_page_human",
+      "risk": "Rationalised overrides by LLM (Use P4 Verifier)"
+    },
+    "requirements": {
+      "name": "Requirements Engineering",
+      "fallback": "ask_stakeholder_conformal",
+      "risk": "Overthinking clear items"
+    },
+    "logistics": {
+      "name": "Logistics / Port Operations",
+      "fallback": "hold_for_physical_inspection",
+      "risk": "WYSIATI on coherent but false notices (Use P3 probe)"
+    },
+    "consumer": {
+      "name": "Consumer behaviour / e-commerce",
+      "fallback": "human_agent_hold",
+      "risk": "Bias vs. noise across customer groups"
+    },
+    "egov": {
+      "name": "E-Government Services",
+      "fallback": "mandatory_human_review",
+      "risk": "Bias vs noise across applicant demographics"
+    },
+    "agentic": {
+      "name": "Agentic Software",
+      "fallback": "drop_result_stop_agent",
+      "risk": "Confident errors on adversarial text (WYSIATI)"
+    }
+  }
+}

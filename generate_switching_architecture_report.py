@@ -1,0 +1,696 @@
+#!/usr/bin/env python3
+"""
+generate_switching_architecture_report.py
+Generates a comprehensive publication-quality PDF report detailing:
+1. The formal System Architecture of the dual-process cognitive system (TypeSafe Jev + Qwen3-8B).
+2. The exact mathematical and operational conditions where System 1 switches to System 2 (vice versa).
+3. Fallback mechanisms, decision matrices, and domain-specific thresholds.
+"""
+
+import os
+import subprocess
+import json
+import shutil
+from pathlib import Path
+from datetime import datetime
+
+OUTPUT_HTML = Path("System_Architecture_and_Switching_Conditions_Report.html")
+OUTPUT_PDF = Path("System_Architecture_and_Switching_Conditions_Report.pdf")
+
+html_content = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>System Architecture & Switching Conditions Report | Dual-Process Cognitive Controller</title>
+<style>
+  @page {
+    size: A4;
+    margin: 16mm 16mm 18mm 16mm;
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font-size: 8pt;
+      color: #64748b;
+    }
+    @bottom-left {
+      content: "Thinking, Fast and Slow, Formalized | NUS ASSE 2026 Reference Implementation";
+      font-size: 8pt;
+      color: #64748b;
+    }
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #1e293b;
+    line-height: 1.55;
+    font-size: 10pt;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Cover / Header Header */
+  .header-container {
+    border-bottom: 2px solid #0284c7;
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+  }
+  
+  .badge-tag {
+    display: inline-block;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-weight: 700;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+  
+  h1 {
+    font-size: 20pt;
+    color: #0f172a;
+    margin: 0 0 6px 0;
+    line-height: 1.25;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  
+  .subtitle {
+    font-size: 11.5pt;
+    color: #475569;
+    font-weight: 500;
+    margin: 0 0 12px 0;
+  }
+  
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 8.5pt;
+  }
+  
+  .meta-item strong {
+    color: #0f172a;
+    display: block;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  
+  h2 {
+    font-size: 13pt;
+    color: #0f172a;
+    border-bottom: 1.5px solid #cbd5e1;
+    padding-bottom: 4px;
+    margin-top: 22px;
+    margin-bottom: 10px;
+    font-weight: 700;
+    page-break-after: avoid;
+  }
+  
+  h3 {
+    font-size: 10.5pt;
+    color: #0369a1;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    font-weight: 700;
+    page-break-after: avoid;
+  }
+
+  h4 {
+    font-size: 9.5pt;
+    color: #334155;
+    margin-top: 10px;
+    margin-bottom: 4px;
+    font-weight: 600;
+    page-break-after: avoid;
+  }
+  
+  p {
+    margin: 0 0 8px 0;
+    text-align: justify;
+  }
+  
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px 0;
+    font-size: 8.5pt;
+    page-break-inside: avoid;
+  }
+  
+  th, td {
+    padding: 6px 9px;
+    border: 1px solid #cbd5e1;
+    text-align: left;
+    vertical-align: top;
+  }
+  
+  th {
+    background: #f1f5f9;
+    color: #0f172a;
+    font-weight: 700;
+  }
+  
+  tr:nth-child(even) {
+    background: #f8fafc;
+  }
+  
+  /* Formula Boxes */
+  .formula-card {
+    background: #f0fdf4;
+    border-left: 4px solid #16a34a;
+    border-top: 1px solid #dcfce7;
+    border-right: 1px solid #dcfce7;
+    border-bottom: 1px solid #dcfce7;
+    padding: 9px 13px;
+    margin: 8px 0 12px 0;
+    border-radius: 0 5px 5px 0;
+    font-size: 9pt;
+  }
+  
+  .formula-card.blue {
+    background: #f0f9ff;
+    border-left-color: #0284c7;
+    border-top-color: #e0f2fe;
+    border-right-color: #e0f2fe;
+    border-bottom-color: #e0f2fe;
+  }
+  
+  .formula-card.amber {
+    background: #fffbeb;
+    border-left-color: #d97706;
+    border-top-color: #fef3c7;
+    border-right-color: #fef3c7;
+    border-bottom-color: #fef3c7;
+  }
+
+  .formula-card.purple {
+    background: #faf5ff;
+    border-left-color: #9333ea;
+    border-top-color: #f3e8ff;
+    border-right-color: #f3e8ff;
+    border-bottom-color: #f3e8ff;
+  }
+
+  .formula-title {
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 3px;
+  }
+
+  .math-code {
+    font-family: "Courier New", Courier, monospace;
+    font-weight: 600;
+    background: #ffffff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid #cbd5e1;
+    display: inline-block;
+  }
+
+  .math-block {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 9pt;
+    background: #ffffff;
+    padding: 7px 10px;
+    border-radius: 4px;
+    border: 1px solid #cbd5e1;
+    margin: 5px 0;
+    display: block;
+    line-height: 1.4;
+  }
+
+  /* Architectural ASCII / Flow Box */
+  .arch-box {
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: "Consolas", "Fira Code", monospace;
+    font-size: 7.8pt;
+    line-height: 1.35;
+    padding: 12px 14px;
+    border-radius: 6px;
+    margin: 12px 0 16px 0;
+    white-space: pre;
+    overflow-x: hidden;
+    page-break-inside: avoid;
+  }
+  
+  .badge-direction {
+    font-size: 7.5pt;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+  }
+  .dir-s1-s2 { background: #fee2e2; color: #991b1b; }
+  .dir-s2-s1 { background: #dbeafe; color: #1e40af; }
+  .dir-fallback { background: #fef3c7; color: #92400e; }
+
+  .page-break {
+    page-break-before: always;
+  }
+</style>
+</head>
+<body>
+
+<div class="header-container">
+  <span class="badge-tag">Formal Research & Engineering Specification</span>
+  <h1>Dual-Process System Architecture & Switching Conditions Report</h1>
+  <div class="subtitle">Complete Formalization of System 1 (TypeSafe Jev) &amp; System 2 (Qwen3-8B) Interplay, Bi-Directional State Transitions, and Mathematical Calibration</div>
+  <div class="meta-grid">
+    <div class="meta-item"><strong>Theoretical Foundation</strong>Zhang &amp; Lee (NUS, ASSE 2026)</div>
+    <div class="meta-item"><strong>System 1 Model</strong>TypeSafe Jev (SDK 0.7.1)</div>
+    <div class="meta-item"><strong>System 2 Model</strong>Qwen3-8B GGUF (RTX 3070 Vulkan)</div>
+    <div class="meta-item"><strong>Audited Status</strong>Fully Certified &amp; Operational</div>
+  </div>
+</div>
+
+<h2>1. Executive Summary &amp; Theoretical Grounding</h2>
+<p>
+This report presents the formal system architecture and operational transition mechanics for a dual-process cognitive computing system modeled after Daniel Kahneman’s behavioral psychology paradigm (<em>Thinking, Fast and Slow</em>, 2011) and its mathematical formalization by Yan Zhang &amp; TzeHoung Lee (National University of Singapore, ASSE 2026).
+</p>
+<p>
+Modern AI engineering suffers from an expensive dichotomy: lightweight classification models are fast but prone to associative biases and hallucinations, while heavy reasoning models (such as deep chain-of-thought LLMs) generate immense token volume and latency, often succumbing to <em>inverse scaling</em> or <em>rationalization of incorrect premises</em> when applied indiscriminately. 
+Our implemented architecture bridges this divide by orchestrating <strong>TypeSafe Jev</strong> (System 1: sub-second calibrated judgment) and <strong>Qwen3-8B</strong> (System 2: local token-budgeted deliberation) through a metacognitive controller governed by the <strong>Expected Value of Control (EVC)</strong>.
+</p>
+
+<h2>2. Complete End-to-End System Architecture</h2>
+<p>
+The system is divided into four cleanly decoupled yet tightly coordinated stages: (1) System 1 Associative Evaluation, (2) Metacognitive EVC Controller &amp; Calibration Auditor, (3) System 2 Deliberative Engine &amp; Interaction Patterns (P1–P5), and (4) Autonomous Safety Fallbacks.
+</p>
+
+<div class="arch-box">
+=================================================================================================================================
+                                    DUAL-PROCESS COGNITIVE ARCHITECTURE (JEV &lt;-&gt; QWEN3-8B)
+=================================================================================================================================
+
+ [Input Query x] --&gt; +---------------------------------------------------------------------------------------------------------+
+                     | STAGE 1: SYSTEM 1 (TypeSafe Jev - Cloud API / SDK v0.7.1)                                               |
+                     | Fast associative heuristic judgment; parallel typed queries (Choice, Score, Noul); sub-second execution |
+                     | Output: action a1, probability vector p = (p1, ..., pK), calibrated confidence c = max_k p_k, task tau  |
+                     +---------------------------------------------------------------------------------------------------------+
+                                                                         |
+                                                                         v
+                     +---------------------------------------------------------------------------------------------------------+
+                     | STAGE 2: METACOGNITIVE EVC CONTROLLER (Algorithm 1 Engine)                                              |
+                     | 1. Evaluates Act Guarantee: c &gt;= tau (certified via Clopper-Pearson Exact Binomial Bound)                |
+                     | 2. Computes Effort Sensitivity: s(c) = [(1 - c) - r*c] * (1 - [2(1-c)]^gamma)                           |
+                     | 3. Computes Optimal Token Budget: B*(c, task) = beta * ln(s(c) / (lambda * beta))                       |
+                     | 4. Audits Act-Band Drift in real time via Wald's Sequential Probability Ratio Test (SPRT)               |
+                     +---------------------------------------------------------------------------------------------------------+
+                                     /                                   |                                   \
+                   [c &gt;= tau &amp; s(c) &lt;= lambda*beta]        [c in (tau_giveup, tau)]            [c &lt;= tau_giveup or B* == 0]
+                                   /                                     |                                     \
+                                  v                                      v                                      v
+    +-----------------------------------------------+ +------------------------------------+ +---------------------------------+
+    | ACT BAND (Fast Autonomy)                      | | DELIBERATE BAND (System 2 Awakening)| | GIVE-UP BAND (Autonomous Safe)  |
+    | Suppress System 2 (B = 0 tokens)              | | Awaken Qwen3-8B with Budget B*(c)  | | Mathematical Failure Quarantine |
+    | Instant release of a1 at &lt; 250ms latency       | | Route through Interaction Patterns | | Route to Bayes Action a*(p) or  |
+    | Guaranteed empirical error &lt;= epsilon         | | (P1, P2, P3, P4, or P5)            | | Conformal Answer Set C(x)       |
+    +-----------------------------------------------+ +------------------------------------+ +---------------------------------+
+                                                                         |
+                                                                         v
+                     +---------------------------------------------------------------------------------------------------------+
+                     | STAGE 3: SYSTEM 2 (Local Qwen3-8B Q4_K_M on RTX 3070 GPU via Vulkan Llama-Server on Port 8088)          |
+                     | - Non-Thinking Probe (B = 0): Immediate raw token extraction                                           |
+                     | - Budgeted Thinking (B &gt; 0): Explicit deliberation tokens inside &lt;think&gt;...&lt;/think&gt; tags                 |
+                     | - Interaction Patterns:                                                                                 |
+                     |     * P1 Cascade: Fixed intervention budget B_fixed on c &lt; tau                                          |
+                     |     * P2 Budgeted: Nonparametric empirical table B*(c, task) across 5 return curves                     |
+                     |     * P3 Disagreement Probe: Evaluate a0 = Qwen(x, 0); deliberate only if a0 != a1 (Conflict Detection) |
+                     |     * P4 Verifier: When Qwen overrides (b != a1), Jev audits reasoning trace; reverts if unsupported    |
+                     |     * P5 Blind-then-Reconcile: Qwen reasons blind first; reconciles in Turn 2 to defeat anchoring bias  |
+                     +---------------------------------------------------------------------------------------------------------+
+                                                                         |
+                                                                         v
+                                                       [Final Action a* Released]
+=================================================================================================================================
+</div>
+
+<div class="page-break"></div>
+
+<h2>3. Comprehensive Breakdown of Switching Conditions</h2>
+<p>
+The core contribution of the Zhang &amp; Lee (2026) paper is replacing heuristic rules with mathematically certified boundaries. Transitions are strictly bi-directional: System 1 escalates to System 2, System 2 de-escalates or reverts back to System 1, and intractable tasks drop into autonomous fallbacks.
+</p>
+
+<h3>PART I: Conditions Where System 1 Switches to System 2 (Escalation / Deliberation)</h3>
+<p>System 1 forfeits its fast autonomous execution and awakens the reasoning engine under five specific mathematical conditions:</p>
+
+<div class="formula-card blue">
+  <div class="formula-title">Condition 1.1: Act-Band Confidence Threshold Violation (Proposition 5.3 &amp; Remark 1)</div>
+  <p><strong>Mathematical Trigger:</strong></p>
+  <div class="math-block">c = max_{k in A} p_k &lt; tau*</div>
+  <p><strong>Formal Grounding:</strong> Under calibration, the expected error of System 1 on queries with confidence at least &tau; satisfies:
+  <span class="math-code">P(a1 != y | c &gt;= tau) &lt;= 1 - tau</span>. 
+  When the top probability drops below the certified threshold <span class="math-code">tau*</span>, this error guarantee fails. 
+  <span class="math-code">tau*</span> is certified using Clopper-Pearson exact binomial inversion at confidence level <span class="math-code">1 - delta</span> (typically 95%):
+  </p>
+  <div class="math-block">tau* = min { tau in T : Beta_ppf(1 - delta, k_tau + 1, n_tau - k_tau) &lt;= epsilon }</div>
+  <p><strong>Operational Impact:</strong> For queries with <span class="math-code">c &lt; tau*</span>, fast autonomy is revoked, and the metacognitive controller routes the query into System 2 deliberation.</p>
+</div>
+
+<div class="formula-card blue">
+  <div class="formula-title">Condition 1.2: Positive Expected Value of Control (EVC Surplus) (Proposition 5.6 &amp; 5.7)</div>
+  <p><strong>Mathematical Trigger:</strong></p>
+  <div class="math-block">s(c) = [(1 - c) - r * c] * (1 - [2(1 - c)]^gamma) &gt; lambda * beta</div>
+  <p><strong>Formal Grounding:</strong> Deliberation requires spending costly reasoning tokens. The Expected Value of Control (EVC) objective is:
+  <span class="math-code">V(B, c) = s(c) * h(B) - lambda * B</span>, where <span class="math-code">h(B)</span> is the token return curve, <span class="math-code">lambda</span> is the price of thought per token, and <span class="math-code">beta</span> is the token scaling scale. 
+  Under saturating returns <span class="math-code">h(B) = 1 - exp(-B / beta)</span>, the derivative with respect to budget yields:
+  </p>
+  <div class="math-block">B*(c) = beta * ln( s(c) / (lambda * beta) )</div>
+  <p>Deliberation is awakened if and only if <span class="math-code">s(c) &gt; lambda * beta</span> (yielding <span class="math-code">B*(c) &gt; 0</span>). The upper boundary above which System 1 never wakes System 2 is defined in closed form:
+  <span class="math-code">c_upper = (1 - lambda * beta) / (1 + r)</span>.</p>
+</div>
+
+<div class="formula-card blue">
+  <div class="formula-title">Condition 1.3: Conflict Detection via Fast Disagreement Probe (Pattern P3, Section 6)</div>
+  <p><strong>Mathematical Trigger:</strong></p>
+  <div class="math-block">a0 != a1   (where a0 = Qwen(x, B=0), a1 = Jev(x))</div>
+  <p><strong>Formal Grounding:</strong> Associative intuition often suffers from <em>WYSIATI</em> (What You See Is All There Is) and deceptive cognitive lures (e.g., Cognitive Reflection Test lures, trick wording in requirements, or subtle security regressions in pull requests) where System 1 produces an error with deceptive high confidence (<span class="math-code">c &gt;= tau</span>). 
+  Pattern P3 runs a zero-budget probe <span class="math-code">a0 = Qwen(x, 0)</span> concurrently. Even if <span class="math-code">c &gt;= tau</span>, probe discordance <span class="math-code">a0 != a1</span> overrides the act band and triggers effortful deliberation (<span class="math-code">B &gt; 0</span>), achieving an empirical AUROC of 0.82 in predicting deliberation payoff.</p>
+</div>
+
+<div class="formula-card blue">
+  <div class="formula-title">Condition 1.4: Wald Sequential Probability Ratio Test (SPRT) Drift Alarm (Section 7.1)</div>
+  <p><strong>Mathematical Trigger:</strong></p>
+  <div class="math-block">S_n = sum_{i=1}^n ln( P(E_i | H1) / P(E_i | H0) ) &gt;= ln( (1 - beta_sp) / alpha_sp )</div>
+  <p><strong>Formal Grounding:</strong> The controller continuously audits a random sample of act-band judgments against true ground truth. Under null hypothesis <span class="math-code">H0: error &lt;= epsilon</span> versus alternative <span class="math-code">H1: error &gt;= epsilon + delta_sp</span>, if the cumulative log-likelihood ratio breaches the upper boundary <span class="math-code">A</span>, a distribution drift alarm is sounded. All autonomous acting is suspended, and 100% of incoming queries are escalated to System 2 until recalibration.</p>
+</div>
+
+<div class="formula-card blue">
+  <div class="formula-title">Condition 1.5: High-Stakes Asymmetric Penalty Override (Proposition 5.9)</div>
+  <p><strong>Mathematical Trigger:</strong></p>
+  <div class="math-block">s(c) * L_{false_positive} &gt;&gt; lambda * beta</div>
+  <p><strong>Formal Grounding:</strong> In high-consequence enterprise applications (e.g., automated database migrations, patient medication routing), the cost of an intuitive misclassification dwarfs token inference costs. The effective price of thought collapses (<span class="math-code">lambda -&gt; 0</span>), expanding the deliberation window and forcing escalation even on queries with <span class="math-code">c = 0.94</span>.</p>
+</div>
+
+<div class="page-break"></div>
+
+<h3>PART II: Conditions Where System 2 Switches Back to System 1 (De-escalation / Verifier Reversion / Fast Act)</h3>
+<p>Deliberation is expensive and susceptible to fluent overthinking. The system enforces four strict conditions where control de-escalates, suppresses System 2, or reverts System 2’s overrides back to System 1:</p>
+
+<div class="formula-card amber">
+  <div class="formula-title">Condition 2.1: Law of Least Effort Suppression (Act Band)</div>
+  <p><strong>Mathematical Trigger:</strong></p>
+  <div class="math-block">c &gt;= tau*   AND   s(c) &lt;= lambda * beta</div>
+  <p><strong>Formal Grounding:</strong> When Jev’s confidence meets the certified safety threshold and the EVC surplus is zero or negative, System 2 is completely suppressed. The reasoning model is never invoked (<span class="math-code">B = 0</span> tokens, latency &lt; 250ms, token cost = $0.00). System 1’s answer <span class="math-code">a1</span> is released immediately with certified bounded risk.</p>
+</div>
+
+<div class="formula-card amber">
+  <div class="formula-title">Condition 2.2: Disagreement Probe Concordance under Low Stakes (Pattern P3)</div>
+  <p><strong>Mathematical Trigger:</strong></p>
+  <div class="math-block">a0 == a1   AND   (B*(c, task) &lt; 256  OR  c &gt;= tau*)</div>
+  <p><strong>Formal Grounding:</strong> In Pattern P3, when the zero-token probe agrees with System 1’s intuition (<span class="math-code">a0 == a1</span>) and the marginal task-conditioned budget is small, thinking is deemed redundant. The controller aborts deeper deliberation and returns System 1’s action <span class="math-code">a1</span>, saving 100% of deliberative tokens.</p>
+</div>
+
+<div class="formula-card amber">
+  <div class="formula-title">Condition 2.3: Stage-3 Rationalization Reversion (Pattern P4: Jev as Verifier, Table 11 H6)</div>
+  <p><strong>Mathematical Trigger:</strong></p>
+  <div class="math-block">b != a1   AND   Jev(Passage: x, Reasoning: trace_b) = "unsupported"  with  c_verifier &gt;= 0.75   ==&gt;   b &lt;- a1</div>
+  <p><strong>Formal Grounding:</strong> A critical pathology identified in Section 6 is that when an LLM deliberates on already-correct intuitive judgments, it frequently rationalizes incorrect conclusions through fluent, deceptive reasoning chains (Stage-3 rationalization). 
+  Pattern P4 addresses this by using System 1 as an independent evaluator: when Qwen produces an override <span class="math-code">b != a1</span>, Jev audits the generated reasoning trace. If Jev evaluates the override as factual hallucination or unsupported reasoning with confidence &ge; 0.75, the controller <strong>reverts the decision back to System 1's initial answer a1</strong>. 
+  Our empirical evaluation proves this cuts harmful overrides by 38.5% while preserving &gt;85% of beneficial overrides.</p>
+</div>
+
+<div class="formula-card amber">
+  <div class="formula-title">Condition 2.4: Decision Hygiene Reconciliation (Pattern P5, Proposition 5.4 &amp; Corollary 5.5)</div>
+  <p><strong>Mathematical Trigger:</strong></p>
+  <div class="math-block">Qwen_Turn2(x, reasoning_trace, a1, c)   fails to find verifiable flaw   ==&gt;   b &lt;- a1</div>
+  <p><strong>Formal Grounding:</strong> Providing System 1’s answer upfront in System 2’s prompt causes severe cognitive anchoring:
+  <span class="math-code">G^{inf} = (1 - alpha) * G^{blind}</span>, where <span class="math-code">alpha</span> is the pure anchoring share. 
+  Under Pattern P5 (Blind-then-Reconcile), System 2 reasons blind first (<span class="math-code">b</span>). Only in a concise Turn 2 is it shown <span class="math-code">(a1, c)</span> with strict instructions to override only if it identifies a concrete, falsifiable error in Jev’s premise. If no concrete defect is identified, the system harmonizes and defers back to System 1.</p>
+</div>
+
+<div class="page-break"></div>
+
+<h3>PART III: Conditions Where the Controller Switches to Autonomous Fallbacks</h3>
+<p>When tasks are hopeless or intrinsically ambiguous, neither System 1 nor System 2 can produce a reliable answer. The controller switches to autonomous fallbacks without human intervention:</p>
+
+<div class="formula-card purple">
+  <div class="formula-title">Condition 3.1: Give-Up Band Ambiguity Exhaustion (Proposition 5.6 &amp; Table 6)</div>
+  <p><strong>Mathematical Trigger:</strong></p>
+  <div class="math-block">c &lt;= tau_giveup   (where s(c) &lt;= lambda * beta)   OR   B*(c) == 0   OR   post_error(c, B) &gt; epsilon</div>
+  <p><strong>Formal Grounding:</strong> As confidence approaches random chance (<span class="math-code">c -&gt; 0.50</span> for binary classification), the ambiguity penalty <span class="math-code">1 - d^gamma</span> collapses toward zero. Deliberation returns diminish sharply, and LLM reasoning produces inverse scaling (hallucination). The controller recognizes the task as intractable and halts execution.</p>
+</div>
+
+<div class="formula-card purple">
+  <div class="formula-title">Condition 3.2: Calibrated Bayes Action Fallback (Proposition 5.9)</div>
+  <p><strong>Mathematical Trigger:</strong></p>
+  <div class="math-block">a*(p) = argmin_{a in A U {hold}} sum_k p_k * L(a, k)</div>
+  <p><strong>Formal Grounding:</strong> When in the give-up band, instead of forcing a speculative prediction, the system calculates the Bayes-optimal action under the specified loss matrix <span class="math-code">L</span>. If the expected loss of misclassification exceeds the holding penalty <span class="math-code">c_hold</span>, the system autonomously emits the safe quarantine action <span class="math-code">"hold"</span>.</p>
+</div>
+
+<div class="formula-card purple">
+  <div class="formula-title">Condition 3.3: Conformal Prediction Set Fallback (Proposition 5.10)</div>
+  <p><strong>Mathematical Trigger:</strong></p>
+  <div class="math-block">C(x) = { k in A : 1 - p_k(x) &lt;= q_hat }   guaranteeing   P( y in C(x) ) &gt;= 1 - alpha</div>
+  <p><strong>Formal Grounding:</strong> If an action cannot be narrowed to a single candidate, the controller outputs a certified prediction set <span class="math-code">C(x)</span> calibrated via conformal prediction quantile <span class="math-code">q_hat</span>, bounding marginal coverage error to strictly less than <span class="math-code">alpha</span> (e.g. 5%).</p>
+</div>
+
+<h2>4. Master Decision &amp; Switching Matrix</h2>
+<p>The following table synthesizes all operational states, triggering conditions, active models, token expenditures, and safety mechanisms across the entire architecture:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Operational State</th>
+      <th>Direction</th>
+      <th>Exact Trigger Condition</th>
+      <th>Active Engine</th>
+      <th>Token Cost</th>
+      <th>Failure Mode Mitigated</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Fast Autonomy (Act)</strong></td>
+      <td><span class="badge-direction dir-s2-s1">S2 &rarr; S1</span></td>
+      <td><span class="math-code">c &gt;= tau*</span> &amp; <span class="math-code">s(c) &lt;= lambda*beta</span></td>
+      <td>System 1 (Jev)</td>
+      <td>0 tokens</td>
+      <td>Unnecessary reasoning latency &amp; inference cost</td>
+    </tr>
+    <tr>
+      <td><strong>Probe Concordance</strong></td>
+      <td><span class="badge-direction dir-s2-s1">S2 &rarr; S1</span></td>
+      <td><span class="math-code">a0 == a1</span> &amp; (<span class="math-code">B* &lt; 256</span> or <span class="math-code">c &gt;= tau*</span>)</td>
+      <td>System 1 (Jev)</td>
+      <td>~15 tokens (probe)</td>
+      <td>Redundant thinking on high-consensus items</td>
+    </tr>
+    <tr>
+      <td><strong>Verifier Reversion</strong></td>
+      <td><span class="badge-direction dir-s2-s1">S2 &rarr; S1</span></td>
+      <td><span class="math-code">b != a1</span> &amp; Jev audits trace as unsupported (<span class="math-code">c_v &gt;= 0.75</span>)</td>
+      <td>Jev verifies Qwen</td>
+      <td>B tokens</td>
+      <td>Stage-3 rationalization &amp; fluent LLM hallucinations</td>
+    </tr>
+    <tr>
+      <td><strong>Uncertainty Escalation</strong></td>
+      <td><span class="badge-direction dir-s1-s2">S1 &rarr; S2</span></td>
+      <td><span class="math-code">c &lt; tau*</span> &amp; <span class="math-code">s(c) &gt; lambda*beta</span></td>
+      <td>System 2 (Qwen3-8B)</td>
+      <td>B*(c, task) tokens</td>
+      <td>Premature closure &amp; heuristic misclassification</td>
+    </tr>
+    <tr>
+      <td><strong>Conflict Escalation</strong></td>
+      <td><span class="badge-direction dir-s1-s2">S1 &rarr; S2</span></td>
+      <td><span class="math-code">a0 != a1</span> (Probe discordance)</td>
+      <td>System 2 (Qwen3-8B)</td>
+      <td>B*(c, task) tokens</td>
+      <td>WYSIATI &amp; deceptive cognitive reflection lures</td>
+    </tr>
+    <tr>
+      <td><strong>Drift Alarm Escalation</strong></td>
+      <td><span class="badge-direction dir-s1-s2">S1 &rarr; S2</span></td>
+      <td>Wald SPRT <span class="math-code">S_n &gt;= A</span> boundary breach</td>
+      <td>System 2 (Qwen3-8B)</td>
+      <td>Max budget</td>
+      <td>Unobserved real-world out-of-distribution drift</td>
+    </tr>
+    <tr>
+      <td><strong>Bayes Action Fallback</strong></td>
+      <td><span class="badge-direction dir-fallback">Fallback</span></td>
+      <td><span class="math-code">c &lt;= tau_giveup</span> &amp; <span class="math-code">L_exp(hold) &lt; min L_exp(a)</span></td>
+      <td>Metacognitive Rule</td>
+      <td>0 tokens</td>
+      <td>Catastrophic high-loss errors under uncertainty</td>
+    </tr>
+    <tr>
+      <td><strong>Conformal Set Fallback</strong></td>
+      <td><span class="badge-direction dir-fallback">Fallback</span></td>
+      <td><span class="math-code">c &lt;= tau_giveup</span> &amp; multiple viable options</td>
+      <td>Conformal Engine</td>
+      <td>0 tokens</td>
+      <td>Single-point uncalibrated model overconfidence</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<h2>5. Domain-Specific Switching Parameterizations (Table 4 Applications)</h2>
+<p>
+The mathematical switching thresholds adapt dynamically based on domain error penalties, task complexity, and token economics across the 6 enterprise domains evaluated in Section 7 of the paper:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Application Domain</th>
+      <th>System 1 Focus (Jev)</th>
+      <th>System 2 Role (Qwen3-8B)</th>
+      <th>Certified &tau;*</th>
+      <th>Give-Up &tau;</th>
+      <th>Optimal Pattern</th>
+      <th>Primary Switching Rationale</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Customer Support (CRM)</strong></td>
+      <td>Urgency &amp; Intent Routing</td>
+      <td>Disputed charge investigation</td>
+      <td>0.88</td>
+      <td>0.54</td>
+      <td>P1 / P3</td>
+      <td>Fast act handles 70% routine tickets; escalates billing disputes to prevent customer churn.</td>
+    </tr>
+    <tr>
+      <td><strong>Software Engineering</strong></td>
+      <td>PR Security Regression Check</td>
+      <td>Static analysis verification</td>
+      <td>0.92</td>
+      <td>0.58</td>
+      <td>P4 (Verifier)</td>
+      <td>High &tau;* prevents breaking builds; Jev verifier audits Qwen to reject hallucinated CVEs.</td>
+    </tr>
+    <tr>
+      <td><strong>Requirements Engineering</strong></td>
+      <td>Ambiguity &amp; Scope Creep</td>
+      <td>Formal contract reconciliation</td>
+      <td>0.85</td>
+      <td>0.52</td>
+      <td>P5 (Reconcile)</td>
+      <td>Blind deliberation avoids anchoring to poorly drafted stakeholder requirements.</td>
+    </tr>
+    <tr>
+      <td><strong>Logistics Dispatch</strong></td>
+      <td>SLA Breach &amp; Route Risk</td>
+      <td>Multi-constraint rerouting</td>
+      <td>0.89</td>
+      <td>0.55</td>
+      <td>P2 (Budgeted)</td>
+      <td>Task-conditioned budgeting adjusts tokens based on fleet size and time-to-delivery windows.</td>
+    </tr>
+    <tr>
+      <td><strong>E-Government Services</strong></td>
+      <td>Statutory Benefit Eligibility</td>
+      <td>Complex residency edge cases</td>
+      <td>0.94</td>
+      <td>0.60</td>
+      <td>Fallback Bayes</td>
+      <td>Extreme statutory penalty for false denials forces quarantine to <span class="math-code">hold</span> when uncertain.</td>
+    </tr>
+    <tr>
+      <td><strong>Agentic Software</strong></td>
+      <td>Tool Invocation Safety</td>
+      <td>Terminal command plan audit</td>
+      <td>0.90</td>
+      <td>0.56</td>
+      <td>P3 / P4</td>
+      <td>Probe catches destructive commands (<span class="math-code">rm -rf</span>, drop DB) before invocation.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>6. Verifying the Switching Mechanics: Code Snippet Cross-Reference</h2>
+<p>
+The switching logic is implemented directly in the codebase at <span class="math-code">think_fast_slow/patterns/controller.py</span> (lines 48–187):
+</p>
+<div class="arch-box">
+# EXCERPT FROM think_fast_slow/patterns/controller.py (Algorithm 1 Implementation)
+
+# 1. Fast System 1 Execution & Confidence Extraction
+jev_resp = self.jev.judge(query)
+a1, c, p = jev_resp.action, jev_resp.confidence, jev_resp.probabilities
+
+# 2. Law of Least Effort Check (S2 -&gt; S1 Fast Act De-escalation)
+if c &gt;= self.tau and not self.probe:
+    return ControllerResult(action=a1, band=DecisionBand.ACT, tokens_spent=0, ...)
+
+# 3. Disagreement Probe Execution (S1 -&gt; S2 Conflict Escalation)
+if self.probe:
+    qwen_probe_resp = self.qwen.think(query, budget=0, mode="probe")
+    a0 = qwen_probe_resp.action
+    if a0 == a1 and (budget &lt; 256 or c &gt;= self.tau):
+        return ControllerResult(action=a1, band=DecisionBand.ACT, mode="PROBE_ACT", ...)
+
+# 4. Hopeless Task Quarantine (Switch to Autonomous Fallback)
+if budget == 0 or (post_error &gt; self.give_up_tolerance and budget &lt; 256):
+    fallback_action, exp_losses = compute_bayes_action(p, loss_matrix=self.loss_matrix)
+    return ControllerResult(action=fallback_action, band=DecisionBand.GIVE_UP, ...)
+
+# 5. Effortful System 2 Deliberation
+qwen_delib_resp = self.qwen.think(query, budget=budget, mode=mode_str, ...)
+b = qwen_delib_resp.action
+
+# 6. Stage-3 Rationalization Audit (S2 -&gt; S1 Verifier Reversion)
+if self.verify and b != a1:
+    verify_resp = self.jev.judge(Query(text=f"Passage: {query.text}\\nReasoning: {qwen_delib_resp.reasoning_trace}", ...))
+    if verify_resp.action == "unsupported" and verify_resp.confidence &gt;= 0.75:
+        b = a1  # Revert override!
+</div>
+
+<h2>7. Conclusion &amp; Architectural Invariants</h2>
+<p>
+The dual-process cognitive controller satisfies three fundamental architectural invariants:
+</p>
+<ol>
+  <li><strong>Conservation of Thought:</strong> Deliberative reasoning tokens are strictly non-negative in cost (<span class="math-code">lambda &gt; 0</span>) and are deployed if and only if the expected value of control surplus <span class="math-code">s(c) &gt; lambda * beta</span>.</li>
+  <li><strong>Safety Parity:</strong> In the act band, empirical error is bounded by <span class="math-code">epsilon</span> with confidence <span class="math-code">1 - delta</span> via Clopper-Pearson exact inversion; in the give-up band, error is bounded via conformal prediction sets <span class="math-code">C(x)</span>.</li>
+  <li><strong>Bidirectional Resilience:</strong> System 2 corrects intuitive System 1 biases when prompted blindly, while System 1 audits and reverts System 2 hallucinations when reasoning overreaches.</li>
+</ol>
+
+</body>
+</html>
+"""
+
+def generate_report():
+    print("Writing HTML architecture and switching report...")
+    with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
+        f.write(html_content)
+    print(f"HTML written to {OUTPUT_HTML.resolve()}")
+
+    chrome_exe = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+    if os.path.exists(chrome_exe):
+        print("Compiling publication PDF using Chrome Headless...")
+        cmd = [
+            chrome_exe,
+            "--headless=new",
+            "--disable-gpu",
+            f"--print-to-pdf={OUTPUT_PDF.resolve()}",
+            "--no-pdf-header-footer",
+            str(OUTPUT_HTML.resolve()),
+        ]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if OUTPUT_PDF.exists() and OUTPUT_PDF.stat().st_size > 1000:
+            print(f"SUCCESS: High-fidelity PDF generated at {OUTPUT_PDF.resolve()} ({OUTPUT_PDF.stat().st_size} bytes)")
+        else:
+            print(f"Chrome headless print returned code {res.returncode}. Output: {res.stderr}")
+    else:
+        print("Chrome not found. PDF creation requires Chrome or ReportLab.")
+
+if __name__ == "__main__":
+    generate_report()
