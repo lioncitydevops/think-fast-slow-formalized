@@ -1,7 +1,6 @@
 import numpy as np
 from typing import Dict, List, Any, Optional
 from ..metacognition.act_band import clopper_pearson_upper
-from sklearn.metrics import roc_auc_score
 
 def evaluate_table_11_hypotheses(
     evaluation_logs: Dict[str, Any],
